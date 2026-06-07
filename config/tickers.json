@@ -1,0 +1,18 @@
+{
+  "description": "Indian market tickers in yfinance format (.NS suffix for NSE equities).",
+  "tickers": [
+    "RELIANCE.NS",
+    "TCS.NS",
+    "HDFCBANK.NS",
+    "INFY.NS",
+    "ICICIBANK.NS",
+    "HINDUNILVR.NS",
+    "SBIN.NS",
+    "BHARTIARTL.NS",
+    "ITC.NS",
+    "LT.NS"
+  ],
+  "index_benchmarks": [
+    "^NSEI"
+  ]
+}

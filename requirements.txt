@@ -1,0 +1,10 @@
+# Core ETL
+yfinance>=1.4.0
+pandas>=2.1.0
+numpy>=1.24.0
+
+# Cloud upload
+boto3==1.34.122
+
+# Config / env
+python-dotenv==1.0.1
