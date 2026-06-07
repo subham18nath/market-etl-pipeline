@@ -1,19 +1,17 @@
 name: Indian Market ETL
+
 on:
   schedule:
-    # 10:30 UTC = 16:00 IST (after Indian market close on trading days)
-    # Adjust cron or add a weekday filter in the job if you want to skip weekends.
-    - cron: "30 10 * * *"
-  workflow_dispatch:   # allows manual trigger from GitHub UI for testing
+    - cron: '30 10 * * 1-5'  # 10:30 UTC = 16:00 IST, Mon-Fri (trading days)
+  workflow_dispatch:
 
 jobs:
-  run-etl:
+  etl:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Log in to Docker Hub (optional) or GHCR — required if using a private image.
-      # For a pure build-in-CI approach, just build the image locally each run.
       - name: Build Docker image
         run: docker build -t market-etl .
 
@@ -21,16 +19,23 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: $ secrets.AWS_ACCESS_KEY_ID 
           AWS_SECRET_ACCESS_KEY: $ secrets.AWS_SECRET_ACCESS_KEY 
-          AWS_REGION: $ vars.AWS_REGION || 'ap-south-1' 
+          AWS_REGION: $ secrets.AWS_REGION 
           S3_BUCKET: $ secrets.S3_BUCKET 
-          S3_PREFIX: $ vars.S3_PREFIX || 'raw/equities' 
-        run: docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_REGION -e S3_BUCKET -e S3_PREFIX market-etl
+          S3_PREFIX: $ secrets.S3_PREFIX 
+        run: |
+          docker run --rm \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e AWS_REGION \
+            -e S3_BUCKET \
+            -e S3_PREFIX \
+            market-etl
 
-      - name: Notify on failure
-        if: failure()
+      - name: Notify Slack on failure (optional)
+        if: $ failure() && secrets.SLACK_WEBHOOK_URL != '' 
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
-            { "text": "🚨 Market ETL failed on $ github.repository  — check Actions logs." }
+            {"text": "🚨 Market ETL failed on $ github.repository  — check Actions logs."}
         env:
           SLACK_WEBHOOK_URL: $ secrets.SLACK_WEBHOOK_URL 
