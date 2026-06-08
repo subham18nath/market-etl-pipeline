@@ -30,3 +30,12 @@ jobs:
             -e S3_BUCKET \
             -e S3_PREFIX \
             market-etl
+
+            - name: Notify Slack on failure (optional)
+        if: ${{ failure() && secrets.SLACK_WEBHOOK_URL != '' }}
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {"text": "🚨 Market ETL failed on ${{ github.repository }} — check Actions logs."}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
