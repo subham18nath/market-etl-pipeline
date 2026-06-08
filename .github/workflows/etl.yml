@@ -2,40 +2,33 @@ name: Indian Market ETL
 
 on:
   schedule:
-    - cron: '30 10 * * 1-5'  # 10:30 UTC = 16:00 IST, Mon-Fri
+    - cron: "30 10 * * *"
   workflow_dispatch:
 
 jobs:
-  etl:
+  run-etl:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Build Docker image
         run: docker build -t market-etl .
 
       - name: Run ETL pipeline
-        env:
-          AWS_ACCESS_KEY_ID: $ secrets.AWS_ACCESS_KEY_ID 
-          AWS_SECRET_ACCESS_KEY: $ secrets.AWS_SECRET_ACCESS_KEY 
-          AWS_REGION: $ secrets.AWS_REGION 
-          S3_BUCKET: $ secrets.S3_BUCKET 
-          S3_PREFIX: $ secrets.S3_PREFIX 
         run: |
           docker run --rm \
-            -e AWS_ACCESS_KEY_ID \
-            -e AWS_SECRET_ACCESS_KEY \
-            -e AWS_REGION \
-            -e S3_BUCKET \
-            -e S3_PREFIX \
+            -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -e AWS_REGION="ap-south-1" \
+            -e S3_BUCKET="${{ secrets.S3_BUCKET }}" \
+            -e S3_PREFIX="raw/equities" \
             market-etl
 
-            - name: Notify Slack on failure (optional)
-        if: ${{ failure() && secrets.SLACK_WEBHOOK_URL != '' }}
+      - name: Notify on failure
+        if: failure()
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
-            {"text": "🚨 Market ETL failed on ${{ github.repository }} — check Actions logs."}
+            { "text": "🚨 Market ETL failed on ${{ github.repository }} — check Actions logs." }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
